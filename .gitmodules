@@ -1,0 +1,63 @@
+[submodule "vim\\pack\\dev\\start\\ale"]
+	path = vim\\pack\\dev\\start\\ale
+	url = https://github.com/w0rp/ale.git
+[submodule "vim\\pack\\dev\\start\\vim-easymotion"]
+	path = vim\\pack\\dev\\start\\vim-easymotion
+	url = https://github.com/easymotion/vim-easymotion.git
+[submodule "vim\\pack\\dev\\start\\fzf.vim"]
+	path = vim\\pack\\dev\\start\\fzf.vim
+	url = https://github.com/junegunn/fzf.vim.git
+[submodule "vim\\pack\\dev\\start\\fzf"]
+	path = vim\\pack\\dev\\start\\fzf
+	url = https://github.com/junegunn/fzf.git
+[submodule "vim\\pack\\dev\\start\\gundo.vim"]
+	path = vim\\pack\\dev\\start\\gundo.vim
+	url = https://github.com/sjl/gundo.vim.git
+[submodule "vim\\pack\\dev\\start\\nerdcommenter"]
+	path = vim\\pack\\dev\\start\\nerdcommenter
+	url = https://github.com/scrooloose/nerdcommenter.git
+[submodule "vim\\pack\\dev\\start\\nerdtree"]
+	path = vim\\pack\\dev\\start\\nerdtree
+	url = https://github.com/scrooloose/nerdtree.git
+[submodule "vim\\pack\\dev\\start\\ultisnips"]
+	path = vim\\pack\\dev\\start\\ultisnips
+	url = https://github.com/SirVer/ultisnips.git
+[submodule "vim\\pack\\dev\\start\\unite.vim"]
+	path = vim\\pack\\dev\\start\\unite.vim
+	url = https://github.com/Shougo/unite.vim.git
+[submodule "vim\\pack\\dev\\start\\vim-abolish"]
+	path = vim\\pack\\dev\\start\\vim-abolish
+	url = https://github.com/tpope/vim-abolish.git
+[submodule "vim\\pack\\dev\\start\\vim-colors-solarized"]
+	path = vim\\pack\\dev\\start\\vim-colors-solarized
+	url = https://github.com/altercation/vim-colors-solarized.git
+[submodule "vim\\pack\\dev\\start\\vim-dirdiff"]
+	path = vim\\pack\\dev\\start\\vim-dirdiff
+	url = https://github.com/will133/vim-dirdiff.git
+[submodule "vim\\pack\\dev\\start\\vim-fugitive"]
+	path = vim\\pack\\dev\\start\\vim-fugitive
+	url = https://github.com/tpope/vim-fugitive.git
+[submodule "vim\\pack\\dev\\start\\vim-noctu"]
+	path = vim\\pack\\dev\\start\\vim-noctu
+	url = https://github.com/noahfrederick/vim-noctu.git
+[submodule "vim\\pack\\dev\\start\\vim-polyglot"]
+	path = vim\\pack\\dev\\start\\vim-polyglot
+	url = https://github.com/sheerun/vim-polyglot.git
+[submodule "vim\\pack\\dev\\start\\vim-repeat"]
+	path = vim\\pack\\dev\\start\\vim-repeat
+	url = https://github.com/tpope/vim-repeat.git
+[submodule "vim\\pack\\dev\\start\\vim-rooter"]
+	path = vim\\pack\\dev\\start\\vim-rooter
+	url = https://github.com/airblade/vim-rooter.git
+[submodule "vim\\pack\\dev\\start\\vim-signature"]
+	path = vim\\pack\\dev\\start\\vim-signature
+	url = https://github.com/kshenoy/vim-signature.git
+[submodule "vim\\pack\\dev\\start\\vim-snippets"]
+	path = vim\\pack\\dev\\start\\vim-snippets
+	url = https://github.com/honza/vim-snippets.git
+[submodule "vim\\pack\\dev\\start\\vim-surround"]
+	path = vim\\pack\\dev\\start\\vim-surround
+	url = https://github.com/tpope/vim-surround.git
+[submodule "vim\\pack\\dev\\start\\vim-wordmotion"]
+	path = vim\\pack\\dev\\start\\vim-wordmotion
+	url = https://github.com/chaoren/vim-wordmotion.git
