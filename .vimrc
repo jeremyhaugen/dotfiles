@@ -136,7 +136,7 @@ set showmatch
 set matchtime=2
 
 " Disable bells on errors
-set visualbell
+set novisualbell
 set noerrorbells
 set t_vb=
 
