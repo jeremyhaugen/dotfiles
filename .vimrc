@@ -72,8 +72,8 @@ if &t_Co > 2 || has("gui_running")
   syntax on
 endif
 
+" Enable filetype specific settings
 if has('autocmd')
-  " Enable filetype specific settings
   filetype plugin indent on
 endif
 
@@ -136,9 +136,13 @@ set showmatch
 set matchtime=2
 
 " Disable bells on errors
-set novisualbell
+set visualbell
 set noerrorbells
 set t_vb=
+" Requires an autocmd when disabling errors for GUI
+if has('autocmd')
+  autocmd GUIEnter * set visualbell t_vb=
+endif
 
 " Set colors, fonts and gui options
 set background=dark
@@ -171,10 +175,12 @@ set statusline+=\ %=%f%m%r
 set statusline+=\ %{ALEGetStatusLine()}
 
 " Set unix line endings for specific unix filetypes
-autocmd Filetype sh setlocal fileformat=unix
-autocmd Filetype csh setlocal fileformat=unix
-autocmd Filetype tcsh setlocal fileformat=unix
-autocmd Filetype zsh setlocal fileformat=unix
+if has('autocmd')
+  autocmd Filetype sh setlocal fileformat=unix
+  autocmd Filetype csh setlocal fileformat=unix
+  autocmd Filetype tcsh setlocal fileformat=unix
+  autocmd Filetype zsh setlocal fileformat=unix
+endif
 
 " Disable backup, don't pollute directories
 set nobackup
@@ -250,10 +256,12 @@ set clipboard=unnamed,unnamedplus
 nmap <silent> <leader>ev :e $MYVIMRC<CR>
 
 " Auto-reload vimrc on save
-augroup reloadVimrc
+if has('autocmd')
+  augroup reloadVimrc
   autocmd!
   autocmd BufWritePost $MYVIMRC nested source $MYVIMRC
-augroup END
+  augroup END
+endif
 
 " Show only the status line for minimized windows
 set winminheight=0
@@ -291,10 +299,12 @@ nnoremap gV `[V`]
 set matchpairs+=<:>
 
 " Set tabs to two spaces for some file types
-autocmd Filetype xml setlocal ts=2 sts=2 sw=2 expandtab
-autocmd Filetype html setlocal ts=2 sts=2 sw=2 expandtab
-autocmd Filetype javascript setlocal ts=2 sts=2 sw=2 expandtab
-autocmd Filetype vim setlocal ts=2 sts=2 sw=2 expandtab
+if has('autocmd')
+  autocmd Filetype xml setlocal ts=2 sts=2 sw=2 expandtab
+  autocmd Filetype html setlocal ts=2 sts=2 sw=2 expandtab
+  autocmd Filetype javascript setlocal ts=2 sts=2 sw=2 expandtab
+  autocmd Filetype vim setlocal ts=2 sts=2 sw=2 expandtab
+endif
 
 "==============================================================================
 " Plugin Configuration
@@ -408,3 +418,10 @@ nnoremap <leader>ct crt
 nnoremap <leader>f :NERDTreeToggle<CR>
 " Show dot files
 let NERDTreeShowHidden=1
+
+
+"------------------------------------------------------------------------------
+" vim-polyglot
+"------------------------------------------------------------------------------
+" Don't use jsx parsers on .js files
+let g:jsx_ext_required=1
