@@ -378,11 +378,18 @@ command! -bang -nargs=* Help call fzf#vim#grep('rg --column --line-number --no-h
 "------------------------------------------------------------------------------
 " Ultisnips
 "------------------------------------------------------------------------------
-" Trigger configuration. Do not use <tab> if you use https://github.com/Valloric/YouCompleteMe.
+if has('win32') || has('win64')
+  let $VIMHOME = "~/vimfiles"
+else
+  let $VIMHOME = "~/.vim"
+endif
+" Configure UltiSnips dir
+let g:UltiSnipsSnippetsDir=$VIMHOME."/UltiSnips"
+" Configure UltiSnips keybindings
 let g:UltiSnipsExpandTrigger="<tab>"
 let g:UltiSnipsJumpForwardTrigger="<c-b>"
 let g:UltiSnipsJumpBackwardTrigger="<c-z>"
-" If you want :UltiSnipsEdit to split your window.
+" Set UltiSnips split to vertical
 let g:UltiSnipsEditSplit="vertical"
 
 "------------------------------------------------------------------------------
