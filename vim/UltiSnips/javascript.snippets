@@ -1,3 +1,13 @@
+snippet main "main function" b
+function main() {
+	$0
+}
+
+if (require.main === module) {
+	main();
+}
+endsnippet
+
 snippet ex "module.exports" b
 module.exports = $1;
 endsnippet
@@ -22,19 +32,19 @@ snippet lit "log.info tag" b
 log.info("tag $1");
 endsnippet
 
-snippet fib "Synchronize fiber" b
-sync.fiber(function () {
-	$1
-});
-endsnippet
-
 snippet sync "Import synchronize" b
 const sync = require("synchronize");
 endsnippet
 
+snippet fib "Synchronize fiber" b
+sync.fiber(function () {
+	$0
+});
+endsnippet
+
 snippet fibc "Synchronize fiber callback" b
 sync.fiber(function () {
-	$2
+	$0
 }, ${1:callback});
 endsnippet
 
@@ -50,29 +60,89 @@ snippet awc "Synchronize await const" b
 const $1 = sync.await($2($3sync.defer()));
 endsnippet
 
-snippet awv "Synchronize await var" b
-var $1 = sync.await($2($3sync.defer()));
-endsnippet
-
-snippet obl "Object loop" b
+snippet ol "Object loop" b
 Object.keys($1).forEach((${2:key}) => {
 	const ${3:val} = $1[$2];
-	$4
+	$0
 });
 endsnippet
 
-snippet arl "Array loop" b
+snippet al "Array loop" b
 $1.forEach((${2:val}) => {
-	$3
+	$0
 });
 endsnippet
 
 snippet fl "For loop" b
 for (let ${1:i} = 0; $1 < $2; $1++) {
-	$3
+	$0
+}
+endsnippet
+
+snippet wl "while loop" b
+while (${1:condition}) {
+	$0
 }
 endsnippet
 
 snippet jst "JSON Stringify"
 JSON.stringify($1);
 endsnippet
+
+snippet c "class" b
+class ${1:name} {
+	constructor(${2:args}) {
+		$0
+	}
+}
+endsnippet
+
+snippet cex "child class" b
+class ${1:name} extends ${2:base} {
+	constructor(${2:args}) {
+		super(${2:args});
+		$0
+	}
+}
+endsnippet
+
+snippet cf "class function" b
+${1:name}(${2:args}) {
+	$0
+}
+endsnippet
+
+snippet kv "kv" b
+${1:key}: ${2:'value'},
+endsnippet
+
+snippet tc "try/catch" b
+try {
+	$1
+}
+catch (${2:err}) {
+	$3
+}
+endsnippet
+
+snippet tf "try/finally" b
+try {
+	$1
+}
+finally {
+	$2
+}
+endsnippet
+
+snippet tcf "try/catch/finally" b
+try {
+	$1
+}
+catch (${2:err}) {
+	$3
+}
+finally {
+	$4
+}
+endsnippet
+

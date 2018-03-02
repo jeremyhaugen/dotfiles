@@ -1,0 +1,15 @@
+snippet s "snippet" !
+`!p snip.rv = "snippet"` ${1:trigger} "${2:description}" ${3:b}
+$0
+`!p snip.rv = "endsnippet"`
+endsnippet
+
+snippet g "global snippet" !
+`!p snip.rv = "global"` !p
+$0
+`!p snip.rv = "endsnippet"`
+endsnippet
+
+snippet v "${VISUAL}" i
+\$\{VISUAL${1:${2:default}${2:/transform/}}\}
+endsnippet
