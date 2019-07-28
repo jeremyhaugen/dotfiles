@@ -61,3 +61,27 @@
 [submodule "vim-wordmotion"]
 	path = vim/pack/dev/start/vim-wordmotion
 	url = https://github.com/chaoren/vim-wordmotion.git
+[submodule "vim/pack/dev/start/vim-encode"]
+	path = vim/pack/dev/start/vim-encode
+	url = https://github.com/roxma/vim-encode.git
+[submodule "vim/pack/dev/start/async.vim"]
+	path = vim/pack/dev/start/async.vim
+	url = https://github.com/prabirshrestha/async.vim.git
+[submodule "vim/pack/dev/start/asyncomplete-lsp.vim"]
+	path = vim/pack/dev/start/asyncomplete-lsp.vim
+	url = https://github.com/prabirshrestha/asyncomplete-lsp.vim.git
+[submodule "vim/pack/dev/start/.\\asyncomplete-ultisnips.vim"]
+	path = vim/pack/dev/start/.\\asyncomplete-ultisnips.vim
+	url = https://github.com/prabirshrestha/asyncomplete-ultisnips.vim.git
+[submodule "vim/pack/dev/start/.\\asyncomplete.vim\\"]
+	path = vim/pack/dev/start/.\\asyncomplete.vim\\
+	url = https://github.com/prabirshrestha/asyncomplete.vim.git
+[submodule "vim/pack/dev/start/.\\editorconfig-vim\\"]
+	path = vim/pack/dev/start/.\\editorconfig-vim\\
+	url = https://github.com/editorconfig/editorconfig-vim.git
+[submodule "vim/pack/dev/start/targets.vim"]
+	path = vim/pack/dev/start/targets.vim
+	url = https://github.com/wellle/targets.vim.git
+[submodule "vim/pack/dev/start/vim-lsp"]
+	path = vim/pack/dev/start/vim-lsp
+	url = https://github.com/prabirshrestha/vim-lsp.git

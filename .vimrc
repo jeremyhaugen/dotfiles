@@ -74,7 +74,7 @@ endif
 
 " Enable filetype specific settings
 if has('autocmd')
-  filetype plugin indent on
+  filetype plugin on
 endif
 
 " Add :Difforig command to show your changes to the file from the original
@@ -106,14 +106,20 @@ set shiftwidth=4
 " Always show status line
 set laststatus=2
 
-" Use utf-8 encoding
 if &encoding ==# 'latin1' && has('gui_running')
+  " Use utf-8 encoding
   set encoding=utf-8
 endif
 
-" Display some whitespace characters and line wrap characters
-set listchars=tab:\|\ ,trail:-,extends:>,precedes:<,nbsp:+
+" Display some whitespace characters
 set list
+if has('gui_running')
+    set listchars=tab:▸\ ,trail:·,extends:→,precedes:←,nbsp:˽
+    set showbreak=╚
+else
+    set listchars=tab:\|\ ,trail:.,extends:>,precedes:<,nbsp:+
+    set showbreak=^
+endif
 
 " Toggle whitespace characters
 noremap <leader>vw :set list!<CR>
@@ -163,6 +169,8 @@ if &t_Co >= 256 || has("gui_running")
   endif
   " set the font
   set guifont=Consolas:h11
+  " Don't blink the cursor in normal mode
+  set guicursor=n:blinkon0
 else
   colorscheme noctu
 endif
@@ -170,7 +178,7 @@ endif
 " Set statusline
 set statusline=%5l/%-5L
 set statusline+=\ col:%3c
-set statusline+=\ ascii:0x%B
+set statusline+=\ hex:0x%B
 set statusline+=\ %=%f%m%r
 set statusline+=\ %{ALEGetStatusLine()}
 
@@ -197,6 +205,8 @@ noremap <C-j> <C-w>j
 noremap <C-k> <C-w>k
 noremap <C-l> <C-w>l
 noremap <C-c> <C-w>c
+noremap + <C-w>+
+noremap - <C-w>-
 
 " Buffer navigation
 noremap <M-j> :bnext<CR>
@@ -243,11 +253,33 @@ nnoremap Y y$
 nnoremap / /\v
 vnoremap / /\v
 
+" Easier mark jumping
+nnoremap ' `
+nnoremap ` '
+
 " Strip all trailing whitespace
-nnoremap <leader>W :%s/\s\+$//<cr>:let @/=''<CR>
+nnoremap <leader>fW :%s/\s\+$//<CR>:let @/=''<CR>
 
 " Reformat leading tabs/spaces
-nnoremap <leader>w :retab<CR>
+nnoremap <leader>fw :retab<CR>
+
+" Save files quicker
+nnoremap <leader>w :w<CR>
+
+" Save a file as root
+noremap <leader>W :w !sudo tee % > /dev/null<CR>
+
+" Quit files quicker
+nnoremap <leader>q :q<CR>
+
+" Save/quit files quicker
+nnoremap <leader>Q :wq<CR>
+
+" change innner word with S
+nnoremap S ciw
+
+" Abbreviate file related messges
+set shortmess=atAI
 
 " Use system clipboard by default
 set clipboard=unnamed,unnamedplus
@@ -351,7 +383,10 @@ let g:ale_echo_msg_format = "[%linter%] %s [%severity%]"
 let g:ale_lint_on_save = 1
 let g:ale_lint_on_text_changed = 0
 " only run eslint for now
-let g:ale_linters = { "javascript": ["eslint"] }
+let g:ale_linters = {
+\   "javascript": ["eslint"],
+\   "typescript": ["tslint", "tsserver"],
+\}
 " Navigate linter errors
 nmap <silent> <leader>k <Plug>(ale_previous_wrap)
 nmap <silent> <leader>j <Plug>(ale_next_wrap)
@@ -361,11 +396,77 @@ nmap <silent> <leader>j <Plug>(ale_next_wrap)
 "------------------------------------------------------------------------------
 map <M-f> <Plug>(easymotion-bd-f)
 map <M-q> <Plug>(easymotion-jumptoanywhere)
+let s:easypaste_yank_key = "y"
+let s:easypaste_paste_key = "p"
+let s:easypaste_pos = 0
+let s:easypaste_prev_opfunc = 0
+function! EasyPasteOperator(type, ...)
+    let sel_save = &selection
+    let &selection = "inclusive"
+    let reg_save = @@
+    if a:0 " Invoked from Visual mode, use gv command.
+        silent exe "normal! gv".s:easypaste_yank_key
+    elseif a:type == 'line'
+        silent exe "normal! '[V']".s:easypaste_yank_key
+    else
+        silent exe "normal! `[v`]".s:easypaste_yank_key
+    endif
+
+    silent exe "normal! ``".s:easypaste_paste_key
+
+    let &selection = sel_save
+    let @@ = reg_save
+    echon ""
+endfunction
+let s:EasyPaste_is_active = 0
+function! EasyPasteFinish()
+    let s:EasyPaste_is_active = 0
+endfunction
+function! AttachEasyPasteAutocmd()
+    let s:EasyPaste_is_active = 1
+    augroup plugin-easypaste-active
+        autocmd!
+        autocmd InsertEnter,WinLeave,BufLeave <buffer>
+            \ call EasyPasteFinish()
+            \  | autocmd! plugin-easypaste-active * <buffer>
+        autocmd CursorMoved <buffer>
+            " Nest autocommand to skip first movement
+            \ autocmd plugin-easypaste-active CursorMoved <buffer>
+            \ call EasyPasteFinish()
+            \  | autocmd! plugin-easypaste-active * <buffer>
+    augroup END
+endfunction
+function! EasyPasteStrip(ind, str)
+    return substitute(a:str, '^\s*\(.\{-}\)\s*$', '\1', '')
+endfunction
+"function! EasyPaste(yank_key, paste_key)
+function! EasyPaste(args)
+    let s:easypaste_yank_key=get(args, "yank", "y")
+    let s:easypaste_paste_key=get(args, "paste", "p")
+    let easypaste_func=get(args, "func", "jumptoanywhere")
+    let func_raw_str = maparg("<Plug>(easymotion-".easypaste_func.")", "n")
+    let matches = matchlist(func_raw_str, '\(EasyMotion#\S\+\)(\(.*\))')
+    if len(matches) >= 3
+        let func_name = matches[1]
+        let func_args_raw = split(matches[2], ",")
+        let func_args = map(func_args_raw, function("EasyPasteStrip"))
+        call call(func_name, func_args)
+    endif
+    redraw
+    "set s:easypaste_prev_opfunc=&operatorfunc
+    set operatorfunc=EasyPasteOperator
+    echon "Enter motion:"
+    call feedkeys("g@")
+endfunction
+nnoremap <M-p> :call EasyPaste("y", "p")<CR>
+nnoremap <M-P> :call EasyPaste("y", "P")<CR>
+nnoremap <M-m> :call EasyPaste("d", "p")<CR>
+nnoremap <M-M> :call EasyPaste("d", "P")<CR>
 
 "------------------------------------------------------------------------------
 " gundo
 "------------------------------------------------------------------------------
-" Don't use Ex mode, use Q for gundo
+" Don't use Ex mode, use Q forgundo
 nnoremap Q :GundoToggle<CR>
 
 "------------------------------------------------------------------------------
@@ -391,6 +492,15 @@ let g:UltiSnipsJumpForwardTrigger="<c-b>"
 let g:UltiSnipsJumpBackwardTrigger="<c-z>"
 " Set UltiSnips split to vertical
 let g:UltiSnipsEditSplit="vertical"
+nnoremap <leader>s :UltiSnipsEdit<CR>
+" Set up asyncomplete
+augroup RegisterAsyncompleteUltisnips
+    autocmd VimEnter * call asyncomplete#register_source({
+        \ 'name': 'ultisnips',
+        \ 'whitelist': ['*'],
+        \ 'completor': function('asyncomplete#sources#ultisnips#completor'),
+    \ })
+augroup end
 
 "------------------------------------------------------------------------------
 " vim-dirdiff
@@ -422,13 +532,44 @@ nnoremap <leader>ct crt
 " NERDTree
 "------------------------------------------------------------------------------
 " Toggle NERDTree
-nnoremap <leader>f :NERDTreeToggle<CR>
+nnoremap <leader>z :NERDTreeToggle<CR>
 " Show dot files
 let NERDTreeShowHidden=1
-
 
 "------------------------------------------------------------------------------
 " vim-polyglot
 "------------------------------------------------------------------------------
 " Don't use jsx parsers on .js files
 let g:jsx_ext_required=1
+
+"------------------------------------------------------------------------------
+" vim-encode
+"------------------------------------------------------------------------------
+let g:vim_encode_default_mapping=0
+" type <leader>\" to escape the " string
+nnoremap <leader>\ @=encode#begin('cstring')<CR>i
+vnoremap <leader>\ @=encode#begin('cstring')<CR>
+nnoremap <leader>& @=encode#begin('html')<CR>i
+vnoremap <leader>& @=encode#begin('html')<CR>
+nnoremap <leader>% @=encode#begin('url')<CR>i
+vnoremap <leader>% @=encode#begin('url')<CR>
+nnoremap <leader># @=encode#begin('hex')<CR>i
+vnoremap <leader># @=encode#begin('hex')<CR>
+
+"------------------------------------------------------------------------------
+" vim-lsp
+"------------------------------------------------------------------------------
+"if executable('typescript-language-server')
+"    au User lsp_setup call lsp#register_server({
+"      \ 'name': 'typescript-language-server',
+"      \ 'cmd': { server_info->[&shell, &shellcmdflag, 'javascript-typescript-stdio --logfile C:\temp\log_tsp.log']},
+"      \ 'whitelist': ['typescript', 'javascript', 'javascript.jsx']
+"      \ })
+""      \ 'cmd': { server_info->[&shell, &shellcmdflag, 'typescript-language-server --stdio --tsserver-path=tsserver.cmd']},
+""      \ 'root_uri': { server_info->lsp#utils#path_to_uri(lsp#utils#find_nearest_parent_directory(lsp#utils#get_buffer_path(), '.git/..'))},
+"endif
+"let g:lsp_signs_enabled = 1         " enable signs
+"let g:lsp_diagnostics_echo_cursor = 1 " enable echo under cursor when in normal mode
+"let g:lsp_signs_error = {'text': '✗'}
+"let g:lsp_signs_warning = {'text': '‼'} " icons require GUI
+"let g:lsp_signs_hint = {'text': '✶'} " icons require GUI
