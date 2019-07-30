@@ -10,8 +10,8 @@ Set-WindowsExplorerOptions -EnableShowHiddenFilesFoldersDrives -DisableShowProte
 Set-TaskbarOptions -Size Small -Dock Bottom -Combine Full -Lock
 
 # Windows Subsystems/Features
-choco install Microsoft-Hyper-V-All -source windowsFeatures
-choco install Microsoft-Windows-Subsystem-Linux -source windowsfeatures
+choco install wsl
+choco install wsl-ubuntu-1804
 
 # Tools
 choco feature enable -n allowGlobalConfirmation
@@ -20,7 +20,7 @@ choco install sysinternals
 choco install git --params '"/GitAndUnixToolsOnPath /WindowsTerminal /NoShellIntegration"'
 choco install vim-tux --params '"/InstallPopUp /RestartExplorer"'
 choco install googlechrome
-choco install sumatrapdf
+choco install adobereader
 choco install python2
 choco install python3
 choco install nodejs
@@ -98,3 +98,12 @@ If (-Not (Test-Path "HKCU:SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Adv
     New-Item -Path HKCU:SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\People | Out-Null
 }
 Set-ItemProperty -Path "HKCU:SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\People" -Name PeopleBand -Type DWord -Value 0
+
+if (-Not (Test-Path "$HOME/dotfiles")) {
+    git clone https://github.com/jeremyhaugen/dotfiles.git $HOME\dotfiles
+
+}
+
+New-Item -itemtype symboliclink -path $HOME -name _vimrc -value $HOME\dotfiles\.vimrc -ErrorAction SilentlyContinue
+New-Item -itemtype symboliclink -path $HOME -name vimfiles -value $HOME\dotfiles\vim -ErrorAction SilentlyContinue
+New-Item -itemtype symboliclink -path $HOME -name .eslintrc.json -value $HOME\dotfiles\.eslintrc.json -ErrorAction SilentlyContinue

@@ -1,10 +1,10 @@
 param (
-    [string]$remote = $null
+    [string]$remote = $null,
     [switch]$nuke = $false
 )
 
-$InstallScriptName=install.ps1
-$NukeScriptName=nuke.ps1
+$InstallScriptName="install.ps1"
+$NukeScriptName="nuke.ps1"
 
 if ($remote)
 {
@@ -24,8 +24,9 @@ Set-ExecutionPolicy Bypass -Scope Process -Force
 Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
 
 choco install boxstarter -y
+Import-Module $env:appdata\Boxstarter\Boxstarter.Chocolatey\Boxstarter.Chocolatey.psd1 -DisableNameChecking -ErrorAction SilentlyContinue
 if ($nuke)
 {
-    Install-BoxstarterPackage -PackageName $NukeScript -DisableReboots
+    Install-BoxstarterPackage -PackageName $NukeScript
 }
-Install-BoxstarterPackage -PackageName $InstallScript -DisableReboots
+Install-BoxstarterPackage -PackageName $InstallScript
