@@ -103,7 +103,6 @@ Set-ItemProperty -Path "HKCU:SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\
 
 if (-Not (Test-Path "$HOME/dotfiles")) {
     git clone https://github.com/jeremyhaugen/dotfiles.git $HOME\dotfiles
-
 }
 
 New-Item -itemtype symboliclink -path $HOME -name _vimrc -value $HOME\dotfiles\.vimrc -ErrorAction SilentlyContinue
