@@ -38,6 +38,8 @@ choco install ripgrep
 choco install fzf
 choco install autohotkey --installargs '"/uiAccess"'
 choco install libreoffice-fresh
+choco install lastpass
+choco install lastpass-for-applications
 
 # Configure BeyondCompare
 Set-ItemProperty -Path HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run -Name Bcomp -Type String -Value "reg delete ""HKEY_CURRENT_USER\Software\Scooter Software\Beyond Compare 4"" /v CacheID /f"
@@ -62,8 +64,8 @@ AddCmdContextMenu -Path HKCR:\Directory\shell\showcmd
 AddCmdContextMenu -Path HKCR:\Directory\Background\shell\showcmd
 
 # Remove all items from taskbar
-Remove-Item "$env:USERPROFILE\AppData\Roaming\Microsoft\Internet Explorer\Quick Launch\User Pinned\TaskBar*" -recurse -ErrorAction 'silentlycontinue'
-Remove-Item -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Taskband" -recurse -ErrorAction 'silentlycontinue'
+#Remove-Item "$env:USERPROFILE\AppData\Roaming\Microsoft\Internet Explorer\Quick Launch\User Pinned\TaskBar*" -recurse -ErrorAction 'silentlycontinue'
+#Remove-Item -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Taskband" -recurse -ErrorAction 'silentlycontinue'
 
 # Dont let apps use my advertising ID
 If (-Not (Test-Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\AdvertisingInfo")) {
