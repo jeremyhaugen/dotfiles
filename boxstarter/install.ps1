@@ -40,6 +40,7 @@ choco install autohotkey --installargs '"/uiAccess"'
 choco install libreoffice-fresh
 choco install lastpass
 choco install lastpass-for-applications
+choco install google-drive-file-stream
 
 # Configure BeyondCompare
 Set-ItemProperty -Path HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run -Name Bcomp -Type String -Value "reg delete ""HKEY_CURRENT_USER\Software\Scooter Software\Beyond Compare 4"" /v CacheID /f"
