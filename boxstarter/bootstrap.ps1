@@ -24,7 +24,7 @@ Set-ExecutionPolicy Bypass -Scope Process -Force
 Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
 
 choco install boxstarter -y
-Import-Module Boxstarter.Chocolatey\Boxstarter.Chocolatey.psd1 -DisableNameChecking -ErrorAction SilentlyContinue
+Import-Module Boxstarter.Chocolatey\Boxstarter.Chocolatey.psd1 -DisableNameChecking
 if ($nuke)
 {
     Install-BoxstarterPackage -PackageName $NukeScript
