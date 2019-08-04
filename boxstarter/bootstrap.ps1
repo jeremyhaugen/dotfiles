@@ -25,6 +25,7 @@ Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://cho
 
 choco install boxstarter -y
 refreshenv
+echo $env:PSModulePath
 Import-Module Boxstarter.Chocolatey
 if ($nuke)
 {
