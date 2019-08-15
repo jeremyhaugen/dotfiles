@@ -1,0 +1,14 @@
+[user]
+	name = Jeremy Haugen
+	email = 4142314+jeremyhaugen@users.noreply.github.com
+[merge]
+	tool = bc4
+[mergetool "bc4"]
+	cmd = 'C:/Program Files/Beyond Compare 4/BComp.exe' \"$LOCAL\" \"$REMOTE\" \"$BASE\" \"$MERGED\"
+	trustExitCode = true
+[diff]
+	tool = bc4
+[difftool "bc4"]
+	cmd = 'C:/Program Files/Beyond Compare 4/BComp.exe' \"$LOCAL\" \"$REMOTE\"
+[core]
+	editor = 'C:/Windows/gvim.bat' -f -i NONE

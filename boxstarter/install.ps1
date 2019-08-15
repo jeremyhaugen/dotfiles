@@ -7,11 +7,25 @@ Disable-BingSearch
 Disable-GameBarTips
 
 Set-WindowsExplorerOptions -EnableShowHiddenFilesFoldersDrives -DisableShowProtectedOSFiles -EnableShowFileExtensions -DisableShowRecentFilesInQuickAccess -DisableShowFrequentFoldersInQuickAccess
-Set-TaskbarOptions -Size Small -Dock Bottom -Combine Full -Lock
+Set-TaskbarOptions -Size Small -Dock Bottom -Combine Always -Lock
 
 # Windows Subsystems/Features
 choco install wsl
-choco install wsl-ubuntu-1804
+# wslconfig outputs with null between every character
+if (-Not (wslconfig /list | select-string "U\0?b\0?u\0?n\0?t\0?u")) {
+    Write-Host "Installing Ubuntu for WSL"
+    $UbuntuAppx="$env:temp/Ubuntu1804.appx"
+    Invoke-WebRequest -Uri https://aka.ms/wsl-ubuntu-1804 -OutFile $UbuntuAppx -UseBasicParsing
+    Add-AppxPackage $UbuntuAppx
+    Remove-Item $UbuntuAppx
+    Write-Host "Finished installing Ubuntu for WSL"
+}
+
+# Enable windows sandbox
+choco install Containers-DisposableClientVM -source windowsFeatures
+
+# Enable Hyper-V
+choco install Microsoft-Hyper-V-All -source windowsFeatures
 
 # Tools
 choco feature enable -n allowGlobalConfirmation
@@ -20,20 +34,27 @@ choco install sysinternals
 choco install git --params '"/GitAndUnixToolsOnPath /WindowsTerminal /NoShellIntegration"'
 choco install vim-tux --params '"/InstallPopUp /RestartExplorer"'
 choco install googlechrome
+choco pin add -n googlechrome
+choco install sumatrapdf.install
 choco install adobereader
+choco install vlc
+choco install irfanview
+choco install irfanviewplugins
 choco install python2
 choco install python3
 choco install nodejs
-choco install putty
+choco install putty.install
+choco install winscp
+choco install hexchat
 choco install 7zip
 #choco install grepwin
 choco install astrogrep
 choco install notepadplusplus -x86
 choco install oldcalc
 choco install beyondcompare
-choco install virtualbox
 choco install make
 choco install visualstudio2017buildtools
+choco install visualstudio2017-workload-vctools
 choco install ripgrep
 choco install fzf
 choco install autohotkey --installargs '"/uiAccess"'
@@ -42,9 +63,40 @@ choco install lastpass
 choco install lastpass-for-applications
 choco install google-drive-file-stream
 
+# Install theme
+$ThemepackUri = "http://download.microsoft.com/download/F/D/8/FD80790C-926E-40C4-A3AA-125F91DF49DD/NASAHiddenUniverse.themepack"
+$ThemepackFile="$env:temp/NASAHiddenUniverse.themepack"
+Invoke-WebRequest -Uri $ThemepackUri -OutFile $ThemepackFile -UseBasicParsing
+Start-Process $ThemepackFile
+Start-Sleep -s 10
+(New-Object -comObject Shell.Application).Windows() | where-object {$_.LocationName -eq "Personalization"} | foreach-object {$_.quit()}
+Remove-Item -Path $ThemepackFile
+
+# Configure Vim
+Install-ChocolateyFileAssociation ".txt" "C:\Program Files\Vim\vim81\gvim.exe"
+
 # Configure BeyondCompare
 Set-ItemProperty -Path HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run -Name Bcomp -Type String -Value "reg delete ""HKEY_CURRENT_USER\Software\Scooter Software\Beyond Compare 4"" /v CacheID /f"
 Remove-ItemProperty -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Run -Name BCClipboard -ErrorAction 'silentlycontinue'
+
+# Configure start menu and taskbar layout
+$layoutfile = "$env:USERPROFILE\dotfiles\layout.xml"
+# Remove previous pins from taskbar
+Remove-Item -Path "$env:USERPROFILE\AppData\Roaming\Microsoft\Internet Explorer\Quick Launch\User Pinned\TaskBar*" -recurse -ErrorAction 'silentlycontinue'
+Remove-Item -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Taskband" -recurse -ErrorAction 'silentlycontinue'
+# Apply the layout.xml
+Set-ItemProperty -Path HKCU:\SOFTWARE\Policies\Microsoft\Windows\Explorer -Name LockedStartLayout -Type DWord -Value 1
+Set-ItemProperty -Path HKCU:\SOFTWARE\Policies\Microsoft\Windows\Explorer -Name StartLayoutFile -Type String -Value $layoutfile
+# Update the layoutfile to force the taskbar icons to be reset
+(Get-ChildItem $layoutfile).LastWriteTime = Get-Date
+# Restart explorer to show the new layout
+Get-Process -ProcessName explorer | Stop-Process
+
+# Don't prompt for new app associations when new programs are installed
+Set-ItemProperty -Path HKLM:\SOFTWARE\Policies\Microsoft\Windows\Explorer -Name NoNewAppAlert -Type DWord -Value 1
+
+# Set the default file associations
+Set-ItemProperty -Path HKLM:\SOFTWARE\Policies\Microsoft\Windows\System -Name DefaultAssociationsConfiguration -Type String -Value "$env:USERPROFILE\dotfiles\file_associations.xml"
 
 function AddCmdContextMenu {
     Param($Path)
@@ -64,9 +116,6 @@ New-PSDrive -Name HKCR -PSProvider Registry -Root HKEY_CLASSES_ROOT | Out-Null
 AddCmdContextMenu -Path HKCR:\Directory\shell\showcmd
 AddCmdContextMenu -Path HKCR:\Directory\Background\shell\showcmd
 
-# Remove all items from taskbar
-#Remove-Item "$env:USERPROFILE\AppData\Roaming\Microsoft\Internet Explorer\Quick Launch\User Pinned\TaskBar*" -recurse -ErrorAction 'silentlycontinue'
-#Remove-Item -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Taskband" -recurse -ErrorAction 'silentlycontinue'
 
 # Dont let apps use my advertising ID
 If (-Not (Test-Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\AdvertisingInfo")) {
@@ -102,6 +151,17 @@ If (-Not (Test-Path "HKCU:SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Adv
 }
 Set-ItemProperty -Path "HKCU:SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\People" -Name PeopleBand -Type DWord -Value 0
 
+# Disable sticky keys
+Set-ItemProperty -Path "HKCU:Control Panel\Accessibility\StickyKeys" -Name Flags -Type String -Value "506"
+Set-ItemProperty -Path "HKCU:Control Panel\Accessibility\Keyboard Response" -Name Flags -Type String -Value "122"
+Set-ItemProperty -Path "HKCU:Control Panel\Accessibility\ToggleKeys" -Name Flags -Type String -Value "58"
+
+# Hide taskbar search button
+Set-ItemProperty -Path "HKCU:SOFTWARE\Microsoft\Windows\CurrentVersion\Search" -Name SearchboxTaskbarMode -Type DWord -Value 0
+
+# Hide taskbar taskview button
+Set-ItemProperty -Path "HKCU:SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name ShowTaskViewButton -Type DWord -Value 0
+
 if (-Not (Test-Path "$HOME/dotfiles")) {
     git clone https://github.com/jeremyhaugen/dotfiles.git $HOME\dotfiles
     git -C $HOME/dotfiles submodule update --init
@@ -110,3 +170,43 @@ if (-Not (Test-Path "$HOME/dotfiles")) {
 New-Item -itemtype symboliclink -path $HOME -name _vimrc -value $HOME\dotfiles\.vimrc -ErrorAction SilentlyContinue
 New-Item -itemtype symboliclink -path $HOME -name vimfiles -value $HOME\dotfiles\vim -ErrorAction SilentlyContinue
 New-Item -itemtype symboliclink -path $HOME -name .eslintrc.json -value $HOME\dotfiles\.eslintrc.json -ErrorAction SilentlyContinue
+New-Item -itemtype symboliclink -path $HOME -name .gitconfig -value $HOME\dotfiles\.gitconfig -ErrorAction SilentlyContinue
+
+# Hibernate when pressing power key
+powercfg -setdcvalueindex SCHEME_CURRENT SUB_BUTTONS PBUTTONACTION 2
+powercfg -setacvalueindex SCHEME_CURRENT SUB_BUTTONS PBUTTONACTION 2
+
+# Hibernate when closing the lid
+powercfg -setdcvalueindex SCHEME_CURRENT SUB_BUTTONS LIDACTION 2
+powercfg -setacvalueindex SCHEME_CURRENT SUB_BUTTONS LIDACTION 2
+
+# Apply the current settings
+powercfg -SetActive SCHEME_CURRENT
+
+# Show hibernate in start power menu
+If (-Not (Test-Path "HKLM:SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\FlyoutMenuSettings")) {
+    New-Item -Path HKLM:SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\FlyoutMenuSettings | Out-Null
+}
+Set-ItemProperty -Path "HKLM:SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\FlyoutMenuSettings" -Name ShowHibernateOption -Type DWord -Value 1
+
+# Hide sleep in start power menu
+Set-ItemProperty -Path "HKLM:SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\FlyoutMenuSettings" -Name ShowSleepOption -Type DWord -Value 0
+
+# Don't go to sleep when on AC power
+powercfg -change -hibernate-timeout-ac 0
+powercfg -change -standby-timeout-ac 0
+
+# Remove .lnk files from desktop
+$DesktopDir = [Environment]::GetFolderPath("Desktop")
+$CommonDesktopDir = [Environment]::GetFolderPath("CommonDesktopDirectory")
+Get-ChildItem -Path $DesktopDir -Filter "*.lnk" | Foreach {
+    Remove-Item $_.FullName -ErrorAction 'silentlycontinue'
+}
+Get-ChildItem -Path $CommonDesktopDir -Filter "*.lnk" | Foreach {
+    Remove-Item $_.FullName -ErrorAction 'silentlycontinue'
+}
+
+$computername = "Jeremy-PC"
+if ($env:computername -ne $computername) {
+    Rename-Computer -NewName $computername
+}
