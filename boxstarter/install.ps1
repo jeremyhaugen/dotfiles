@@ -34,6 +34,8 @@ choco install sysinternals
 choco install git --params '"/GitAndUnixToolsOnPath /WindowsTerminal /NoShellIntegration"'
 choco install vim --params '"/NoDefaultVimrc /NoDesktopShortcuts /RestartExplorer"'
 choco install googlechrome
+choco install firefox
+choco install sumatrapdf
 choco install adobereader
 choco install vlc
 choco install irfanview
@@ -54,7 +56,14 @@ choco install ripgrep
 choco install fzf
 choco install autohotkey --installargs '"/uiAccess"'
 choco install hashtab
-If ("$env:QC_SDD_FILER" -notmatch "SAN") {
+choco install mediainfo
+choco install paint.net
+choco install windirstat
+If ("$env:QC_SDD_FILER" -match "SAN") {
+    # Work PC
+    choco install vnc-viewer
+}
+else {
     # Personal PC
     choco install libreoffice-fresh
     choco install lastpass
@@ -186,6 +195,7 @@ New-Item -itemtype symboliclink -path $HOME -name _vimrc -value $HOME\dotfiles\.
 New-Item -itemtype symboliclink -path $HOME -name vimfiles -value $HOME\dotfiles\vim -ErrorAction SilentlyContinue
 New-Item -itemtype symboliclink -path $HOME -name .eslintrc.json -value $HOME\dotfiles\.eslintrc.json -ErrorAction SilentlyContinue
 New-Item -itemtype symboliclink -path $HOME -name .gitconfig -value $HOME\dotfiles\.gitconfig -ErrorAction SilentlyContinue
+New-Item -itemtype symboliclink -path $HOME -name .flake8 -value $HOME\dotfiles\.flake8 -ErrorAction SilentlyContinue
 
 # Hibernate when pressing power key
 powercfg -setdcvalueindex SCHEME_CURRENT SUB_BUTTONS PBUTTONACTION 2
