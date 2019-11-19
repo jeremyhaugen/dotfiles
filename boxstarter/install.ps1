@@ -74,6 +74,7 @@ pip install scipy
 pip install matplotlib
 pip install pypiwin32
 pip install psutil
+pip install pyserial
 npm install eslint
 npm install tslint
 npm install tsserver
