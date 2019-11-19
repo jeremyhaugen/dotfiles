@@ -83,25 +83,8 @@ if !exists(":DiffOrig")
                   \ | wincmd p | diffthis
 endif
 
-" Copy indent from current line when starting a new line
-set autoindent
-
 " Remove included files from insert mode completion, to prevent pollution
 set complete-=i
-
-" Use spaces rather than tabs of tabs for '<', '>', and autoindent
-set expandtab
-
-" Use spaces rather than tabs for insert/delete at the beginning of a line
-set smarttab
-
-" Round indent to multiple of shiftwidth when using '<' or '>'
-set shiftround
-
-" Set the width of tabs to be 4 spaces
-set tabstop=4
-set softtabstop=4
-set shiftwidth=4
 
 " Always show status line
 set laststatus=2
@@ -286,6 +269,7 @@ set clipboard=unnamed,unnamedplus
 
 " Edit vimrc file
 nmap <silent> <leader>ev :e $MYVIMRC<CR>
+nmap <silent> <leader>rv :source $MYVIMRC<CR>
 
 " Auto-reload vimrc on save
 if has('autocmd')
@@ -330,13 +314,120 @@ nnoremap gV `[V`]
 " Allow '<' and '>' to be matched with %
 set matchpairs+=<:>
 
-" Set tabs to two spaces for some file types
+"------------------------------------------------------------------------------
+" Tab/space related settings
+"------------------------------------------------------------------------------
+
+" Set file specific tab settings
 if has('autocmd')
+  autocmd Filetype * setlocal ts=4 sts=4 sw=4 expandtab
   autocmd Filetype xml setlocal ts=2 sts=2 sw=2 expandtab
   autocmd Filetype html setlocal ts=2 sts=2 sw=2 expandtab
   autocmd Filetype javascript setlocal ts=2 sts=2 sw=2 expandtab
   autocmd Filetype vim setlocal ts=2 sts=2 sw=2 expandtab
+  autocmd Filetype python setlocal ts=4 sts=4 sw=4 noexpandtab
 endif
+
+" Copy indent from current line when starting a new line
+set autoindent
+
+" Copy the indent structure from current line when starting a new line
+set copyindent
+
+" Round indent to multiple of shiftwidth when using '<' or '>'
+set shiftround
+
+function! SmartInsertTab()
+  " Return true if we should insert a tab instead of spaces
+  return (!&expandtab) &&
+       \ (col('.') == 1 || getline('.')[col('.') - 2] ==? "\<Tab>")
+endfunction
+
+function! SmarterTab()
+  " force using spaces if there is a non-tab before the cursor
+  if SmartInsertTab()
+    return "\<Tab>"
+  else
+    " force it to use spaces
+    set expandtab
+    return "\<Tab>\<Esc>:set noexpandtab\<CR>a"
+  endif
+endfunction
+
+function! SmarterIndentOperator(type)
+  SmarterIndent("\<C-r>=SmarterTab()\<CR>\<Esc>")
+endfunction
+
+function! SmarterUnindentOperator(type)
+  SmarterIndent("\<BS>\<Esc>")
+endfunction
+
+function! SmarterIndent(indent_op)
+  let column = virtcol('.')
+  let sel_save = &selection
+  let &selection = "inclusive"
+  let reg_save = @@
+  let visualmode_tab = 0
+  let lowest_col = 100
+  let visual_range = reverse(range(line("'["), line("']")))
+  for l:linenum in visual_range
+    silent exe "normal! ".l:linenum."G^"
+    if !strlen(getline(l:linenum))
+      " skip empty lines
+      continue
+    endif
+    let column = virtcol('.')
+    if column < lowest_col
+      let lowest_col = column
+    endif
+  endfor
+  for l:linenum in visual_range
+    if !strlen(getline(l:linenum))
+      " skip empty lines
+      continue
+    endif
+    silent exe "normal! ".l:linenum."G".lowest_col."|i".indent_op
+  endfor
+  silent exe "normal! I\<Esc>l"
+
+  let &selection = sel_save
+  let @@ = reg_save
+endfunction
+
+function! StripAlignmentRegex()
+  return ":s/^\\(\\t\\+\\)\\ */\\1\\t/\<CR>"
+endfunction
+
+function! IndentStripAlignmentInsert()
+  " Strip the spaces used for alignment
+  " spaces used for alignment
+  return "\<C-o>".StripAlignmentRegex()."\<C-o>I"
+endfunction
+
+function! IndentStripAlignmentNormal()
+  return StripAlignmentRegex()."I\<Esc>l"
+endfunction
+
+" We need to map tab in an autocmd after plugins have been loaded,
+" since Ultisnips is also mapping tab and will overwrite our mapping
+if has('autocmd')
+  autocmd VimEnter * imap <expr> <Tab> SmarterTab()
+endif
+
+imap <expr> <S-Tab> IndentStripAlignmentInsert()
+nmap <expr> <S-Tab> IndentStripAlignmentNormal()
+vmap <expr> <S-Tab> IndentStripAlignmentNormal()
+
+nmap > :<C-u>set operatorfunc=SmarterIndentOperator<CR>g@
+nmap < :<C-u>set operatorfunc=SmarterUnindentOperator<CR>g@
+nmap >> V:<C-u>set operatorfunc=SmarterIndentOperator<CR>g@
+nmap << V:<C-u>set operatorfunc=SmarterUnindentOperator<CR>g@
+vmap > :<C-u>set operatorfunc=SmarterIndentOperator<CR>gvg@
+vmap < :<C-u>set operatorfunc=SmarterUnindentOperator<CR>gvg@
+
+" Use shift-tab to wipe all characters and insert a tab
+"imap <S-Tab> <C-\><C-o>0<C-\><C-o>f <C-\><C-o>dw<Tab>
+"imap <S-Tab> <C-\><C-o>dT<Tab><Tab>
 
 "==============================================================================
 " Plugin Configuration
@@ -355,6 +446,7 @@ let g:netrw_banner = 0
 "------------------------------------------------------------------------------
 let g:rooter_use_lcd = 1 " set each dir local to the window
 let g:rooter_resolve_links = 1 " resolve symbolic links
+let g:rooter_manual_only = 1 " don't automatically start
 
 "------------------------------------------------------------------------------
 " vim-wordmotion
@@ -386,6 +478,7 @@ let g:ale_lint_on_text_changed = 0
 let g:ale_linters = {
 \   "javascript": ["eslint"],
 \   "typescript": ["tslint", "tsserver"],
+\   "python": ["flake8"],
 \}
 " Navigate linter errors
 nmap <silent> <leader>k <Plug>(ale_previous_wrap)

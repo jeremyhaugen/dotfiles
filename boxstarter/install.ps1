@@ -32,23 +32,18 @@ choco feature enable -n allowGlobalConfirmation
 choco feature enable -n useRememberedArgumentsForUpgrades
 choco install sysinternals
 choco install git --params '"/GitAndUnixToolsOnPath /WindowsTerminal /NoShellIntegration"'
-choco install vim-tux --params '"/InstallPopUp /RestartExplorer"'
+choco install vim --params '"/NoDefaultVimrc /NoDesktopShortcuts /RestartExplorer"'
 choco install googlechrome
-choco pin add -n googlechrome
-choco install sumatrapdf.install
 choco install adobereader
 choco install vlc
 choco install irfanview
 choco install irfanviewplugins
-choco install python2
-choco install python3
+choco install python
 choco install nodejs
 choco install putty.install
 choco install winscp
-choco install hexchat
+choco install agentransack
 choco install 7zip
-#choco install grepwin
-choco install astrogrep
 choco install notepadplusplus -x86
 choco install oldcalc
 choco install beyondcompare
@@ -58,10 +53,30 @@ choco install visualstudio2017-workload-vctools
 choco install ripgrep
 choco install fzf
 choco install autohotkey --installargs '"/uiAccess"'
-choco install libreoffice-fresh
-choco install lastpass
-choco install lastpass-for-applications
-choco install google-drive-file-stream
+choco install hashtab
+If ("$env:QC_SDD_FILER" -notmatch "SAN") {
+    # Personal PC
+    choco install libreoffice-fresh
+    choco install lastpass
+    choco install lastpass-for-applications
+    choco install google-drive-file-stream
+
+    $computername = "Jeremy-PC"
+    if ($env:computername -ne $computername) {
+        Rename-Computer -NewName $computername
+    }
+}
+
+pip install flake8
+pip install requests
+pip install numpy
+pip install scipy
+pip install matplotlib
+pip install pypiwin32
+pip install psutil
+npm install eslint
+npm install tslint
+npm install tsserver
 
 # Install theme
 $ThemepackUri = "http://download.microsoft.com/download/F/D/8/FD80790C-926E-40C4-A3AA-125F91DF49DD/NASAHiddenUniverse.themepack"
@@ -72,9 +87,6 @@ Start-Sleep -s 10
 (New-Object -comObject Shell.Application).Windows() | where-object {$_.LocationName -eq "Personalization"} | foreach-object {$_.quit()}
 Remove-Item -Path $ThemepackFile
 
-# Configure Vim
-Install-ChocolateyFileAssociation ".txt" "C:\Program Files\Vim\vim81\gvim.exe"
-
 # Configure BeyondCompare
 Set-ItemProperty -Path HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run -Name Bcomp -Type String -Value "reg delete ""HKEY_CURRENT_USER\Software\Scooter Software\Beyond Compare 4"" /v CacheID /f"
 Remove-ItemProperty -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Run -Name BCClipboard -ErrorAction 'silentlycontinue'
@@ -82,7 +94,7 @@ Remove-ItemProperty -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Run -N
 # Configure start menu and taskbar layout
 $layoutfile = "$env:USERPROFILE\dotfiles\layout.xml"
 # Remove previous pins from taskbar
-Remove-Item -Path "$env:USERPROFILE\AppData\Roaming\Microsoft\Internet Explorer\Quick Launch\User Pinned\TaskBar*" -recurse -ErrorAction 'silentlycontinue'
+Remove-Item -Path "$env:APPDATA\Microsoft\Internet Explorer\Quick Launch\User Pinned\TaskBar*" -recurse -ErrorAction 'silentlycontinue'
 Remove-Item -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Taskband" -recurse -ErrorAction 'silentlycontinue'
 # Apply the layout.xml
 Set-ItemProperty -Path HKCU:\SOFTWARE\Policies\Microsoft\Windows\Explorer -Name LockedStartLayout -Type DWord -Value 1
@@ -116,6 +128,8 @@ New-PSDrive -Name HKCR -PSProvider Registry -Root HKEY_CLASSES_ROOT | Out-Null
 AddCmdContextMenu -Path HKCR:\Directory\shell\showcmd
 AddCmdContextMenu -Path HKCR:\Directory\Background\shell\showcmd
 
+# Automatically run the Autohotkey script
+New-Item -itemtype symboliclink -path "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Startup" -name winkey.ahk -value $HOME\dotfiles\winkey.ahk -ErrorAction SilentlyContinue
 
 # Dont let apps use my advertising ID
 If (-Not (Test-Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\AdvertisingInfo")) {
@@ -204,9 +218,4 @@ Get-ChildItem -Path $DesktopDir -Filter "*.lnk" | Foreach {
 }
 Get-ChildItem -Path $CommonDesktopDir -Filter "*.lnk" | Foreach {
     Remove-Item $_.FullName -ErrorAction 'silentlycontinue'
-}
-
-$computername = "Jeremy-PC"
-if ($env:computername -ne $computername) {
-    Rename-Computer -NewName $computername
 }

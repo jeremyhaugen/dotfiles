@@ -104,6 +104,115 @@ return
 Run %SnippingToolPath%
 return
 
+;DetectHiddenWindows, On
+
+;#m::
+;WinRestore, A
+
+;WinGet MX, MinMax, A
+;WinGetActiveTitle, WinTitle
+;If(WinTitle) {
+;    If(MX=1){
+;        WinMinimize, A
+;    }
+;    Else {
+;        WinMaximize, A
+;    }
+;}
+;Else {
+;    WinRestore, A
+;}
+
+LastMinimizedWindow()
+{
+    WinGet, Windows, List
+    
+    Loop, %Windows%
+    {
+        WinGet, WinState, MinMax, % "ahk_id" Windows%A_Index%
+        
+        if (WinState = -1)
+            return Windows%A_Index%
+    }
+}
+
+;surrounds Text with double quotes - for readability
+quote(Text)
+{
+    quote = "
+    
+    return quote . Text . quote
+}
+
+;DetectHiddenWindows, On
+
+;#n::
+;WinGet MX, MinMax, A
+;	If(MX=1){
+;		WinSet, Bottom,, A
+;		WinMinimize, A
+;		send, {shift down}{alt down}{esc}{alt up}{shift up}
+;	}
+;	Else If(MX=0)
+;		WinMaximize, A
+;	Else If(MX=-1){
+;		send, {rwin down}{up}{rwin up}
+;		send, {rwin down}{down}{rwin up}
+;	}	
+;    MsgBox % MX
+;return
+
+;WinGet MX, MinMax, A
+;WinGetActiveTitle, WinTitle
+;If(WinTitle) {
+;    If(MX=1){
+;        WinRestore, A
+;    }
+;    Else {
+;        LastActiveWinTitle := WinTitle
+;        WinMinimize, A
+;    }
+;}
+;Else {
+;    ;WinMaximize % (LastActiveWinTitle)
+;    ;LastMinimized := LastMinimizedWindow()
+;    ;WinGetTitle, WinTitle, ahk_id %LastMinimized%
+;    ;MsgBox, % "The title for the last minimized window is " . quote(WinTitle)
+;}
+
+;WinMinimize, A
+;WinGetActiveTitle, WinTitle
+;;WinGet MX, MinMax, A
+;;WinMinimize, A
+;If(WinTitle) {
+;    LastActiveWinTitle := WinTitle
+;    WinMinimize, A
+;}
+;Else {
+;    WinRestore % (LastActiveWinTitle)
+;}
+;;MsgBox % WinTitle
+;;If(MX=1){
+;;    WinRestore, A
+;;}
+;;Else {
+;;    WinMaximize, A
+;;}
+
+;WinGet MX, MinMax, A
+;	If(MX=1){
+;		;WinSet, Bottom,, A
+;		WinMinimize, A
+;		send, {shift down}{alt down}{esc}{alt up}{shift up}
+;	}
+;	Else If(MX=0)
+;		WinMaximize, A
+;	Else If(MX=-1){
+;		send, {rwin down}{up}{rwin up}
+;		send, {rwin down}{down}{rwin up}
+;	}	
+;return
+
 #j::
 ActivateNextWindow()
 return
