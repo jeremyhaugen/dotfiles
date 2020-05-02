@@ -88,3 +88,9 @@
 [submodule "vim/pack/dev/start/quick-scope"]
 	path = vim/pack/dev/start/quick-scope
 	url = https://github.com/unblevable/quick-scope.git
+[submodule "vim/pack/dev/start/vim-unimpaired"]
+	path = vim/pack/dev/start/vim-unimpaired
+	url = https://github.com/tpope/vim-unimpaired.git
+[submodule "vim/pack/dev/start/vim-vinegar"]
+	path = vim/pack/dev/start/vim-vinegar
+	url = https://github.com/tpope/vim-vinegar.git
