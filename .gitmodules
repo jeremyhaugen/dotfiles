@@ -16,9 +16,6 @@
 [submodule "vim/pack/dev/start/nerdcommenter"]
 	path = vim/pack/dev/start/nerdcommenter
 	url = https://github.com/scrooloose/nerdcommenter.git
-[submodule "vim/pack/dev/start/nerdtree"]
-	path = vim/pack/dev/start/nerdtree
-	url = https://github.com/scrooloose/nerdtree.git
 [submodule "vim/pack/dev/start/ultisnips"]
 	path = vim/pack/dev/start/ultisnips
 	url = https://github.com/SirVer/ultisnips.git
@@ -85,3 +82,9 @@
 [submodule "vim/pack/dev/start/vim-lsp"]
 	path = vim/pack/dev/start/vim-lsp
 	url = https://github.com/prabirshrestha/vim-lsp.git
+[submodule "vim/pack/dev/start/iceberg.vim"]
+	path = vim/pack/dev/start/iceberg.vim
+	url = https://github.com/cocopon/iceberg.vim.git
+[submodule "vim/pack/dev/start/quick-scope"]
+	path = vim/pack/dev/start/quick-scope
+	url = https://github.com/unblevable/quick-scope.git

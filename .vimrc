@@ -194,7 +194,19 @@ set statusline=%5l/%-5L
 set statusline+=\ col:%3v
 set statusline+=\ hex:0x%B
 set statusline+=\ %=%{pathshorten(expand('%:f'))}%m%r
-set statusline+=\ %{ALEGetStatusLine()}
+function! LinterStatus() abort
+    let l:counts = ale#statusline#Count(bufnr(''))
+
+    let l:all_errors = l:counts.error + l:counts.style_error
+    let l:all_non_errors = l:counts.total - l:all_errors
+
+    return l:counts.total == 0 ? 'OK' : printf(
+    \   '%dW %dE',
+    \   all_non_errors,
+    \   all_errors
+    \)
+endfunction
+set statusline+=\ %{LinterStatus()}
 
 " Set unix line endings for specific unix filetypes
 if has('autocmd')
