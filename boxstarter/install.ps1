@@ -31,7 +31,7 @@ choco install Microsoft-Hyper-V-All -source windowsFeatures
 choco feature enable -n allowGlobalConfirmation
 choco feature enable -n useRememberedArgumentsForUpgrades
 choco install sysinternals
-choco install git --params '"/GitAndUnixToolsOnPath /WindowsTerminal /NoShellIntegration"'
+choco install git --params '"/GitAndUnixToolsOnPath /WindowsTerminal /NoGuiHereIntegration"'
 choco install vim --params '"/NoDefaultVimrc /NoDesktopShortcuts /RestartExplorer"'
 choco install googlechrome
 choco install firefox

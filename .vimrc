@@ -13,6 +13,9 @@ set whichwrap+=<,>,h,l
 " Keep 1000 lines of command line history
 set history=1000
 
+" Wrap lines at 79 characters
+set textwidth=79
+
 " Set maximum tab pages to 50
 set tabpagemax=50
 
@@ -112,6 +115,12 @@ if v:version > 703 || v:version == 703 && has("patch541")
   set formatoptions+=j
 endif
 
+" Don't break already long lines in insert mode
+set formatoptions+=l
+
+" Don't automatically break long code lines
+set formatoptions-=t
+
 " Load matchit.vim
 if !exists('g:loaded_matchit') && findfile('plugin/matchit.vim', &rtp) ==# ''
   runtime! macros/matchit.vim
@@ -137,7 +146,29 @@ endif
 set background=dark
 if &t_Co >= 256 || has("gui_running")
   try
-    colorscheme solarized
+    " Configure quickscope colors
+    augroup qs_colors
+      autocmd!
+      autocmd ColorScheme * highlight QuickScopePrimary guifg='#87d7ff' gui=underline ctermfg=117 cterm=underline
+      autocmd ColorScheme * highlight QuickScopeSecondary guifg='#d7afd7' gui=underline ctermfg=182 cterm=underline
+    augroup END
+
+    " Map fzf colors to the colorscheme
+    let g:fzf_colors =
+    \ { 'fg':      ['fg', 'Normal'],
+      \ 'bg':      ['bg', 'Normal'],
+      \ 'hl':      ['fg', 'Comment'],
+      \ 'fg+':     ['fg', 'CursorLine', 'CursorColumn', 'Normal'],
+      \ 'bg+':     ['bg', 'CursorLine', 'CursorColumn'],
+      \ 'hl+':     ['fg', 'Statement'],
+      \ 'info':    ['fg', 'PreProc'],
+      \ 'border':  ['fg', 'Ignore'],
+      \ 'prompt':  ['fg', 'Conditional'],
+      \ 'pointer': ['fg', 'Exception'],
+      \ 'marker':  ['fg', 'Keyword'],
+      \ 'spinner': ['fg', 'Label'],
+      \ 'header':  ['fg', 'Comment'] }
+    colorscheme iceberg
   catch
     colorscheme desert
   endtry
@@ -160,9 +191,9 @@ endif
 
 " Set statusline
 set statusline=%5l/%-5L
-set statusline+=\ col:%3c
+set statusline+=\ col:%3v
 set statusline+=\ hex:0x%B
-set statusline+=\ %=%f%m%r
+set statusline+=\ %=%{pathshorten(expand('%:f'))}%m%r
 set statusline+=\ %{ALEGetStatusLine()}
 
 " Set unix line endings for specific unix filetypes
@@ -191,6 +222,9 @@ noremap <C-c> <C-w>c
 noremap + <C-w>+
 noremap - <C-w>-
 
+" Open current file directory
+nnoremap <leader>d :Explore<CR>
+
 " Buffer navigation
 noremap <M-j> :bnext<CR>
 noremap <M-k> :bprevious<CR>
@@ -217,14 +251,34 @@ noremap <leader>tm :tabmove<CR>
 noremap <M-l> :tabnext<CR>
 noremap <M-h> :tabprevious<CR>
 
+" Navigate the jumplist by files
+function! JumpToNextBufferInJumplist(dir) " 1=forward, -1=backward
+    let jl = getjumplist() | let jumplist = jl[0] | let curjump = jl[1]
+    let jumpcmdstr = a:dir > 0 ? "<C-I>" : "<C-O>"
+    let jumpcmdchr = a:dir > 0 ? "\<C-I>" : "\<C-O>"    " <C-I> or <C-O>
+    let searchrange = a:dir > 0 ? range(curjump+1,len(jumplist))
+                              \ : range(curjump-1,0,-1)
+    for i in searchrange
+        if jumplist[i]["bufnr"] != bufnr('%')
+            let n = (i - curjump) * a:dir
+            echo "Executing ".jumpcmdstr." ".n." times."
+            execute "silent normal! ".n.jumpcmdchr
+            break
+        endif
+    endfor
+endfunction
+nnoremap <M-o> :call JumpToNextBufferInJumplist(-1)<CR>
+nnoremap <M-i> :call JumpToNextBufferInJumplist(1)<CR>
+
 " Maintain column for various commands
 set nostartofline
 
 " Confirm when trying to quit with unsaved changes
 set confirm
 
-" Show line numbers
+" Show hybrid line numbers
 set number
+set relativenumber
 
 " Highlight the cursor line
 set cursorline
@@ -241,10 +295,10 @@ nnoremap ' `
 nnoremap ` '
 
 " Strip all trailing whitespace
-nnoremap <leader>fW :%s/\s\+$//<CR>:let @/=''<CR>
+nnoremap <leader>mW :%s/\s\+$//<CR>:let @/=''<CR>
 
 " Reformat leading tabs/spaces
-nnoremap <leader>fw :retab<CR>
+nnoremap <leader>mw :retab<CR>
 
 " Save files quicker
 nnoremap <leader>w :w<CR>
@@ -258,6 +312,9 @@ nnoremap <leader>q :q<CR>
 " Save/quit files quicker
 nnoremap <leader>Q :wq<CR>
 
+" Don't use Ex mode. Instead run a quick macro.
+nnoremap Q @q
+
 " change innner word with S
 nnoremap S ciw
 
@@ -268,8 +325,8 @@ set shortmess=atAI
 set clipboard=unnamed,unnamedplus
 
 " Edit vimrc file
-nmap <silent> <leader>ev :e $MYVIMRC<CR>
-nmap <silent> <leader>rv :source $MYVIMRC<CR>
+nmap <silent> <leader>ve :e $MYVIMRC<CR>
+nmap <silent> <leader>vr :source $MYVIMRC<CR>
 
 " Auto-reload vimrc on save
 if has('autocmd')
@@ -337,97 +394,21 @@ set copyindent
 " Round indent to multiple of shiftwidth when using '<' or '>'
 set shiftround
 
-function! SmartInsertTab()
-  " Return true if we should insert a tab instead of spaces
-  return (!&expandtab) &&
-       \ (col('.') == 1 || getline('.')[col('.') - 2] ==? "\<Tab>")
+function! Interleave()
+    " retrieve last selected area position and size
+    let start = line(".")
+    execute "normal! gvo\<esc>"
+    let end = line(".")
+    let [start, end] = sort([start, end], "n")
+    let size = (end - start + 1) / 2
+    " and interleave!
+    for i in range(size - 1)
+        execute (start + size + i). 'm' .(start + 2 * i)
+    endfor
 endfunction
 
-function! SmarterTab()
-  " force using spaces if there is a non-tab before the cursor
-  if SmartInsertTab()
-    return "\<Tab>"
-  else
-    " force it to use spaces
-    set expandtab
-    return "\<Tab>\<Esc>:set noexpandtab\<CR>a"
-  endif
-endfunction
-
-function! SmarterIndentOperator(type)
-  SmarterIndent("\<C-r>=SmarterTab()\<CR>\<Esc>")
-endfunction
-
-function! SmarterUnindentOperator(type)
-  SmarterIndent("\<BS>\<Esc>")
-endfunction
-
-function! SmarterIndent(indent_op)
-  let column = virtcol('.')
-  let sel_save = &selection
-  let &selection = "inclusive"
-  let reg_save = @@
-  let visualmode_tab = 0
-  let lowest_col = 100
-  let visual_range = reverse(range(line("'["), line("']")))
-  for l:linenum in visual_range
-    silent exe "normal! ".l:linenum."G^"
-    if !strlen(getline(l:linenum))
-      " skip empty lines
-      continue
-    endif
-    let column = virtcol('.')
-    if column < lowest_col
-      let lowest_col = column
-    endif
-  endfor
-  for l:linenum in visual_range
-    if !strlen(getline(l:linenum))
-      " skip empty lines
-      continue
-    endif
-    silent exe "normal! ".l:linenum."G".lowest_col."|i".indent_op
-  endfor
-  silent exe "normal! I\<Esc>l"
-
-  let &selection = sel_save
-  let @@ = reg_save
-endfunction
-
-function! StripAlignmentRegex()
-  return ":s/^\\(\\t\\+\\)\\ */\\1\\t/\<CR>"
-endfunction
-
-function! IndentStripAlignmentInsert()
-  " Strip the spaces used for alignment
-  " spaces used for alignment
-  return "\<C-o>".StripAlignmentRegex()."\<C-o>I"
-endfunction
-
-function! IndentStripAlignmentNormal()
-  return StripAlignmentRegex()."I\<Esc>l"
-endfunction
-
-" We need to map tab in an autocmd after plugins have been loaded,
-" since Ultisnips is also mapping tab and will overwrite our mapping
-if has('autocmd')
-  autocmd VimEnter * imap <expr> <Tab> SmarterTab()
-endif
-
-imap <expr> <S-Tab> IndentStripAlignmentInsert()
-nmap <expr> <S-Tab> IndentStripAlignmentNormal()
-vmap <expr> <S-Tab> IndentStripAlignmentNormal()
-
-nmap > :<C-u>set operatorfunc=SmarterIndentOperator<CR>g@
-nmap < :<C-u>set operatorfunc=SmarterUnindentOperator<CR>g@
-nmap >> V:<C-u>set operatorfunc=SmarterIndentOperator<CR>g@
-nmap << V:<C-u>set operatorfunc=SmarterUnindentOperator<CR>g@
-vmap > :<C-u>set operatorfunc=SmarterIndentOperator<CR>gvg@
-vmap < :<C-u>set operatorfunc=SmarterUnindentOperator<CR>gvg@
-
-" Use shift-tab to wipe all characters and insert a tab
-"imap <S-Tab> <C-\><C-o>0<C-\><C-o>f <C-\><C-o>dw<Tab>
-"imap <S-Tab> <C-\><C-o>dT<Tab><Tab>
+" Select your two contiguous, same-sized blocks, and use it to Interleave
+vnoremap <leader>z <esc>:call Interleave()<CR>
 
 "==============================================================================
 " Plugin Configuration
@@ -437,9 +418,35 @@ vmap < :<C-u>set operatorfunc=SmarterUnindentOperator<CR>gvg@
 " netrw
 "------------------------------------------------------------------------------
 " Use tree view for netrw
-let g:netrw_liststyle = 3
+let g:netrw_liststyle = 0
 " Remove the top banner
 let g:netrw_banner = 0
+" Hide '.' and '..' directories in netrw
+let g:netrw_list_hide = '^\./$,^\../$'
+" Obey the g:netrw_list_hide variable
+let g:netrw_hide = 1
+
+" Ability to non-empty directories
+function! s:rmdir()
+  if input('delete '.fnamemodify(bufname(''),':p').getline('.').' ? (y/n)') ==# 'y'
+    if !delete(fnamemodify(bufname(''),':p').getline('.'),'rf')
+      if search('^\.\/$','Wb')
+        exe "norm \<cr>"
+      endif
+    endif
+  endif
+endfunction
+command! Rmnetrw call <SID>rmdir()
+
+" Set netrw specific keybindings
+" augroup netrw_mapping
+"   autocmd!
+"   autocmd filetype netrw call NetrwMapping()
+" augroup END
+" 
+" function! NetrwMapping()
+"   noremap <buffer> <leader>d :Rmnetrw<CR>
+" endfunction
 
 "------------------------------------------------------------------------------
 " vim-rooter
@@ -447,6 +454,58 @@ let g:netrw_banner = 0
 let g:rooter_use_lcd = 1 " set each dir local to the window
 let g:rooter_resolve_links = 1 " resolve symbolic links
 let g:rooter_manual_only = 1 " don't automatically start
+let g:root_switching_enabled = 1
+
+" Switch to root based on directory name
+let g:valid_roots = [
+  \ "PythonApplications", "Source", fnamemodify($HOME, ":t"), "dotfiles",
+  \ "vimfiles", "dev", "sandbox"]
+
+function! ChangeDirectory(dir)
+  if a:dir !=# getcwd()
+    execute ":lcd" fnameescape(a:dir)
+  endif
+endfunction
+
+function! SetRoot()
+  if !g:root_switching_enabled
+    return
+  endif
+  let l:root_dir = getbufvar("%", "localRootDir")
+  if !empty(l:root_dir)
+    call ChangeDirectory(l:root_dir)
+    return
+  endif
+  let l:cur_file = resolve(expand("%:p"))
+  if empty(l:cur_file)
+    return
+  endif
+  let l:file_dir = isdirectory(l:cur_file) ? l:cur_file : fnamemodify(l:cur_file, ":h")
+  let l:prev_dir = ""
+  while 1
+    let l:dir_name = fnamemodify(l:file_dir, ":t")
+    for l:valid_dir in g:valid_roots
+      if l:valid_dir == l:dir_name
+        call ChangeDirectory(l:file_dir)
+        call setbufvar("%", "localRootDir", l:file_dir)
+        return
+      endif
+    endfor
+    let l:prev_dir = l:file_dir
+    let l:file_dir = fnamemodify(l:file_dir, ":h")
+    if l:prev_dir == l:file_dir
+      " We reached the top. Use vim-rooter instead.
+      execute ":Rooter"
+      return
+    endif
+  endwhile
+endfunction
+
+augroup findRoot
+  autocmd!
+  autocmd VimEnter,BufEnter * nested if empty(&buftype) | call SetRoot() | endif
+  autocmd BufWritePost * nested if empty(&buftype) | call setbufvar("%", "localRootDir", "") | call SetRoot() | endif
+augroup END
 
 "------------------------------------------------------------------------------
 " vim-wordmotion
@@ -470,7 +529,7 @@ let g:wordmotion_spaces = '_-.'
 " configure the message string
 let g:ale_echo_msg_error_str = "E"
 let g:ale_echo_msg_warning_str = "W"
-let g:ale_echo_msg_format = "[%linter%] %s [%severity%]"
+let g:ale_echo_msg_format = "[%linter%][%code%] %s [%severity%]"
 " only run linters when saving
 let g:ale_lint_on_save = 1
 let g:ale_lint_on_text_changed = 0
@@ -478,7 +537,7 @@ let g:ale_lint_on_text_changed = 0
 let g:ale_linters = {
 \   "javascript": ["eslint"],
 \   "typescript": ["tslint", "tsserver"],
-\   "python": ["flake8"],
+\   "python": ["pylint"],
 \}
 " Navigate linter errors
 nmap <silent> <leader>k <Plug>(ale_previous_wrap)
@@ -489,78 +548,11 @@ nmap <silent> <leader>j <Plug>(ale_next_wrap)
 "------------------------------------------------------------------------------
 map <M-f> <Plug>(easymotion-bd-f)
 map <M-q> <Plug>(easymotion-jumptoanywhere)
-let s:easypaste_yank_key = "y"
-let s:easypaste_paste_key = "p"
-let s:easypaste_pos = 0
-let s:easypaste_prev_opfunc = 0
-function! EasyPasteOperator(type, ...)
-    let sel_save = &selection
-    let &selection = "inclusive"
-    let reg_save = @@
-    if a:0 " Invoked from Visual mode, use gv command.
-        silent exe "normal! gv".s:easypaste_yank_key
-    elseif a:type == 'line'
-        silent exe "normal! '[V']".s:easypaste_yank_key
-    else
-        silent exe "normal! `[v`]".s:easypaste_yank_key
-    endif
-
-    silent exe "normal! ``".s:easypaste_paste_key
-
-    let &selection = sel_save
-    let @@ = reg_save
-    echon ""
-endfunction
-let s:EasyPaste_is_active = 0
-function! EasyPasteFinish()
-    let s:EasyPaste_is_active = 0
-endfunction
-function! AttachEasyPasteAutocmd()
-    let s:EasyPaste_is_active = 1
-    augroup plugin-easypaste-active
-        autocmd!
-        autocmd InsertEnter,WinLeave,BufLeave <buffer>
-            \ call EasyPasteFinish()
-            \  | autocmd! plugin-easypaste-active * <buffer>
-        autocmd CursorMoved <buffer>
-            " Nest autocommand to skip first movement
-            \ autocmd plugin-easypaste-active CursorMoved <buffer>
-            \ call EasyPasteFinish()
-            \  | autocmd! plugin-easypaste-active * <buffer>
-    augroup END
-endfunction
-function! EasyPasteStrip(ind, str)
-    return substitute(a:str, '^\s*\(.\{-}\)\s*$', '\1', '')
-endfunction
-"function! EasyPaste(yank_key, paste_key)
-function! EasyPaste(args)
-    let s:easypaste_yank_key=get(args, "yank", "y")
-    let s:easypaste_paste_key=get(args, "paste", "p")
-    let easypaste_func=get(args, "func", "jumptoanywhere")
-    let func_raw_str = maparg("<Plug>(easymotion-".easypaste_func.")", "n")
-    let matches = matchlist(func_raw_str, '\(EasyMotion#\S\+\)(\(.*\))')
-    if len(matches) >= 3
-        let func_name = matches[1]
-        let func_args_raw = split(matches[2], ",")
-        let func_args = map(func_args_raw, function("EasyPasteStrip"))
-        call call(func_name, func_args)
-    endif
-    redraw
-    "set s:easypaste_prev_opfunc=&operatorfunc
-    set operatorfunc=EasyPasteOperator
-    echon "Enter motion:"
-    call feedkeys("g@")
-endfunction
-nnoremap <M-p> :call EasyPaste("y", "p")<CR>
-nnoremap <M-P> :call EasyPaste("y", "P")<CR>
-nnoremap <M-m> :call EasyPaste("d", "p")<CR>
-nnoremap <M-M> :call EasyPaste("d", "P")<CR>
 
 "------------------------------------------------------------------------------
 " gundo
 "------------------------------------------------------------------------------
-" Don't use Ex mode, use Q forgundo
-nnoremap Q :GundoToggle<CR>
+nnoremap <leader>vu :GundoToggle<CR>
 
 "------------------------------------------------------------------------------
 " fzf
@@ -568,6 +560,49 @@ nnoremap Q :GundoToggle<CR>
 command! -bang -nargs=* Find call fzf#vim#grep('rg --column --line-number --no-heading --fixed-strings --ignore-case --hidden --follow --glob "!.git/*" --color "always" '.shellescape(<q-args>), 1, <bang>0)
 
 command! -bang -nargs=* Help call fzf#vim#grep('rg --column --line-number --no-heading --fixed-strings --ignore-case --hidden --follow --glob "!.git/*" --color "always" '.shellescape(<q-args>).' '.join(map(split(globpath(&runtimepath, 'doc'), '\n'), 'fzf#shellescape(v:val)')), 1, <bang>0)
+
+command! -bang -nargs=* VimHelp call fzf#vim#grep('rg --column --line-number --no-heading --fixed-strings --ignore-case --hidden --follow --glob "!.git/*" --color "always" '.shellescape(<q-args>).' '.$VIM, 1, <bang>0)
+
+
+
+
+" Case sensitive ripgrep
+command! -bang -nargs=* Rgs call fzf#vim#grep('rg --column --line-number --no-heading --color "always" '.shellescape(<q-args>), 1, fzf#vim#with_preview(), <bang>0)
+
+" Add ctrl-q binding to add to quickfix list
+function! s:build_quickfix_list(lines)
+  call setqflist(map(copy(a:lines), '{ "filename": v:val }'))
+  copen
+  cc
+endfunction
+let g:fzf_action = {
+  \ 'ctrl-q': function('s:build_quickfix_list'),
+  \ 'ctrl-t': 'tab split',
+  \ 'ctrl-x': 'split',
+  \ 'ctrl-v': 'vsplit'}
+
+" Set ripgrep as default grep
+set grepprg=rg\ --vimgrep
+
+nnoremap <leader>vh :VimHelp<CR>
+nnoremap <leader>vH :Help
+nnoremap <leader>f :GFiles --exclude-standard --cached --others<CR>
+nnoremap <leader>F :Files<CR>
+nnoremap <leader>: :Commands<CR>
+nnoremap <leader>r :Rgs<space>
+nnoremap <leader>R :Rg<space>
+nnoremap <leader>8 :Rgs <C-R><C-W><CR>
+nnoremap <leader>* :Rg <C-R><C-W><CR>
+vnoremap <leader>8 y:Rgs <C-R>"<CR>
+vnoremap <leader>* y:Rg <C-R>"<CR>
+
+nmap <silent> <leader>gd :LspDefinition<CR>
+nmap <silent> <leader>gy :LspTypeDefinition<CR>
+nmap <silent> <leader>gi :LspImplementation<CR>
+nmap <silent> <leader>gr :LspReferences<CR>
+nmap <silent> <leader>gj :LspNextReference<CR>
+nmap <silent> <leader>gk :LspPreviousReference<CR>
+nmap <silent> <leader>ga :LspCodeAction<CR>
 
 "------------------------------------------------------------------------------
 " Ultisnips
@@ -581,19 +616,12 @@ endif
 let g:UltiSnipsSnippetsDir=$VIMHOME."/UltiSnips"
 " Configure UltiSnips keybindings
 let g:UltiSnipsExpandTrigger="<tab>"
-let g:UltiSnipsJumpForwardTrigger="<c-b>"
-let g:UltiSnipsJumpBackwardTrigger="<c-z>"
+let g:UltiSnipsJumpForwardTrigger="<c-n>"
+let g:UltiSnipsJumpBackwardTrigger="<c-p>"
+let g:ultisnips_python_format="google"
 " Set UltiSnips split to vertical
 let g:UltiSnipsEditSplit="vertical"
 nnoremap <leader>s :UltiSnipsEdit<CR>
-" Set up asyncomplete
-augroup RegisterAsyncompleteUltisnips
-    autocmd VimEnter * call asyncomplete#register_source({
-        \ 'name': 'ultisnips',
-        \ 'whitelist': ['*'],
-        \ 'completor': function('asyncomplete#sources#ultisnips#completor'),
-    \ })
-augroup end
 
 "------------------------------------------------------------------------------
 " vim-dirdiff
@@ -652,17 +680,11 @@ vnoremap <leader># @=encode#begin('hex')<CR>
 "------------------------------------------------------------------------------
 " vim-lsp
 "------------------------------------------------------------------------------
-"if executable('typescript-language-server')
-"    au User lsp_setup call lsp#register_server({
-"      \ 'name': 'typescript-language-server',
-"      \ 'cmd': { server_info->[&shell, &shellcmdflag, 'javascript-typescript-stdio --logfile C:\temp\log_tsp.log']},
-"      \ 'whitelist': ['typescript', 'javascript', 'javascript.jsx']
-"      \ })
-""      \ 'cmd': { server_info->[&shell, &shellcmdflag, 'typescript-language-server --stdio --tsserver-path=tsserver.cmd']},
-""      \ 'root_uri': { server_info->lsp#utils#path_to_uri(lsp#utils#find_nearest_parent_directory(lsp#utils#get_buffer_path(), '.git/..'))},
-"endif
-"let g:lsp_signs_enabled = 1         " enable signs
-"let g:lsp_diagnostics_echo_cursor = 1 " enable echo under cursor when in normal mode
-"let g:lsp_signs_error = {'text': '✗'}
-"let g:lsp_signs_warning = {'text': '‼'} " icons require GUI
-"let g:lsp_signs_hint = {'text': '✶'} " icons require GUI
+let g:lsp_diagnostics_enabled = 0
+if executable('pyls')
+  au User lsp_setup call lsp#register_server({
+  \ 'name': 'pyls',
+  \ 'cmd': {server_info->['pyls']},
+  \ 'whitelist': ['python'],
+  \ })
+endif
