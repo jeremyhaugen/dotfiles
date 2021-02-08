@@ -94,3 +94,6 @@
 [submodule "vim/pack/dev/start/vim-vinegar"]
 	path = vim/pack/dev/start/vim-vinegar
 	url = https://github.com/tpope/vim-vinegar.git
+[submodule "vim/pack/dev/start/ZFVimDirDiff"]
+	path = vim/pack/dev/start/ZFVimDirDiff
+	url = https://github.com/ZSaberLv0/ZFVimDirDiff.git
